@@ -1,50 +1,66 @@
-import os
-import requests
+import streamlit as st
 import json
+import os
 from datetime import datetime
-import subprocess
 
-# 設定
-YAHOO_CLIENT_ID = os.environ.get("YAHOO_CLIENT_ID")
-OUTPUT_FILE = "items.json"
+# ページ設定
+st.set_page_config(page_title="ヤフートクスコ", page_icon="🛒", layout="wide")
 
-def fetch_yahoo_shopping(jan_code):
-    url = "https://shopping.yahoo.co.jp/api/v1/itemSearch"
-    params = {"appid": YAHOO_CLIENT_ID, "jan_code": jan_code, "sort": "+price", "results": 1}
-    try:
-        res = requests.get(url, params=params)
-        data = res.json()
-        if "hits" in data and data["hits"]:
-            item = data["hits"][0]
-            return {"name": item["name"], "price": int(item["price"]), "url": item["url"], "image": item["image"]["medium"], "shop": item["store"]["name"]}
-    except: return None
-    return None
+# スタイル設定
+st.markdown("""
+    <style>
+    .item-card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f9f9f9;
+    }
+    .profit-text {
+        color: #e74c3c;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-def main():
-    test_jans = [
-        {"jan": "4902370550733", "buy_price": 42000}, # Switch
-        {"jan": "4948872415545", "buy_price": 62000}, # PS5
-    ]
-    results = []
-    for target in test_jans:
-        yahoo_data = fetch_yahoo_shopping(target["jan"])
-        if yahoo_data:
-            points = int(yahoo_data["price"] * 0.08)
-            jisshitsu = yahoo_data["price"] - points
-            profit = target["buy_price"] - jisshitsu
-            yahoo_data.update({"jan": target["jan"], "buy_price": target["buy_price"], "profit": profit, "profit_rate": round((profit / jisshitsu) * 100, 1)})
-            results.append(yahoo_data)
+# タイトル
+st.title("🛒 ヤフートクスコ")
+st.caption("ヤフショ価格と相場の差を1秒でチェック")
+
+# サイドバー設定
+with st.sidebar:
+    st.header("⚙️ ポイント設定")
+    paypay_rate = st.number_input("PayPayステップ (%)", value=8.0) / 100
+
+# データ読み込み
+if os.path.exists("items.json"):
+    with open("items.json", "r", encoding="utf-8") as f:
+        items = json.load(f)
+else:
+    items = []
+
+if not items:
+    st.info("現在、データを収集しています。GitHubのActionsから実行するか、1分ほどお待ちください。")
+else:
+    # 利益額順に並び替え
+    sorted_items = sorted(items, key=lambda x: x['profit'], reverse=True)
     
-    # データを保存
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=4)
+    for item in sorted_items:
+        with st.container():
+            st.markdown(f"""
+            <div class="item-card">
+                <b>{item['name'][:50]}...</b><br>
+                実質価格: ¥{int(item['price'] * (1 - paypay_rate)):,} <small>(定価: ¥{item['price']:,})</small><br>
+                <span class="profit-text">利益目安: 💰 ¥{item['profit']:,}</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            with st.expander("詳細・リンク"):
+                st.write(f"📈 現在の相場目安: ¥{item['buy_price']:,}")
+                st.link_button("ヤフショで商品を見る", item['url'])
 
-    # 【重要】GitHubにデータを強制保存するための設定
-    subprocess.run(["git", "config", "user.name", "GitHub Actions"])
-    subprocess.run(["git", "config", "user.email", "actions@github.com"])
-    subprocess.run(["git", "add", OUTPUT_FILE])
-    subprocess.run(["git", "commit", "-m", "Auto Update Data"])
-    subprocess.run(["git", "push"])
-
-if __name__ == "__main__":
-    main()
+# 秘書レポート
+st.sidebar.markdown("---")
+st.sidebar.subheader("📋 秘書レポート")
+st.sidebar.write("データが古い場合はGitHubのActionsを手動実行してください。")
