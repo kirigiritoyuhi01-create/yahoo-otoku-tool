@@ -30,7 +30,7 @@ st.markdown("""
 
 # タイトル
 st.title("🛒 ヤフートクスコ")
-st.caption("ヤフショと買取屋の価格差を1秒でチェック")
+st.caption("ヤフショ価格と相場の差を1秒でチェック")
 
 # サイドバー：ポイント設定
 with st.sidebar:
