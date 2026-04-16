@@ -97,7 +97,7 @@ else:
             with st.expander("詳細・販路を広げる🌏"):
                 st.write(f"🏠 ショップ: {item['shop']}")
                 st.write(f"🆔 JAN: {item['jan']}")
-                st.write(f"買取最高値目安: ¥{item['buy_price']:,}")
+                st.write(f"📈 現在の相場目安: ¥{item['buy_price']:,}")
                 
                 c1, c2, c3 = st.columns(3)
                 c1.link_button("ヤフショ", item["url"])
