@@ -1,74 +1,34 @@
-import os
-import requests
+import streamlit as st
 import json
-from datetime import datetime
-import subprocess
+import os
 
-YAHOO_CLIENT_ID = os.environ.get("YAHOO_CLIENT_ID")
-OUTPUT_FILE = "items.json"
+# ページ設定
+st.set_page_config(page_title="ヤフートクスコ", page_icon="🛒", layout="wide")
 
-JAN_LIST = [
-    {"jan": "4902370550733", "buy_price": 42000},
-    {"jan": "4948872415545", "buy_price": 62000},
-    {"jan": "4549995427845", "buy_price": 125000},
-    {"jan": "4902370542943", "buy_price": 23000},
-    {"jan": "4549292183498", "buy_price": 85000},
-    {"jan": "4547736066175", "buy_price": 35000},
-]
+# スタイル設定
+st.markdown("""
+    <style>
+    .item-card { border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin-bottom: 15px; background-color: #f9f9f9; }
+    .profit-text { color: #e74c3c; font-weight: bold; font-size: 1.2em; }
+    </style>
+    """, unsafe_allow_html=True)
 
-def fetch_yahoo_shopping(jan_code):
-    # 最新のV3 APIエンドポイントを使用
-    url = "https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch"
-    params = {
-        "appid": YAHOO_CLIENT_ID,
-        "jan_code": jan_code,
-        "results": 1,
-    }
-    try:
-        res = requests.get(url, params=params)
-        data = res.json()
-        if "hits" in data and data["hits"]:
-            item = data["hits"][0]
-            return {
-                "name": item["name"],
-                "price": int(item["price"]),
-                "url": item["url"],
-                "image": item.get("image", {}).get("medium", ""),
-                "shop": item.get("seller", {}).get("name", ""),
-            }
-    except: return None
-    return None
+st.title("🛒 ヤフートクスコ")
 
-def main():
-    results = []
-    for target in JAN_LIST:
-        yahoo_data = fetch_yahoo_shopping(target["jan"])
-        if yahoo_data:
-            points = int(yahoo_data["price"] * 0.08)
-            jisshitsu = yahoo_data["price"] - points
-            profit = target["buy_price"] - jisshitsu
-            yahoo_data.update({
-                "jan": target["jan"],
-                "buy_price": target["buy_price"],
-                "profit": profit,
-                "updated_at": datetime.now().strftime("%m/%d %H:%M")
-            })
-            results.append(yahoo_data)
+# データの読み込み
+if os.path.exists("items.json"):
+    with open("items.json", "r", encoding="utf-8") as f:
+        items = json.load(f)
     
-    # データを保存
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=4)
-    
-    # 【ここが重要】GitHubにファイルを保存してアプリに反映させる命令
-    try:
-        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
-        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-        subprocess.run(["git", "add", OUTPUT_FILE], check=True)
-        subprocess.run(["git", "commit", "-m", "Update items data"], check=True)
-        subprocess.run(["git", "push"], check=True)
-        print("GitHubへのデータ保存に成功しました！")
-    except Exception as e:
-        print(f"保存エラー（変更がない場合もここを通ります）: {e}")
-
-if __name__ == "__main__":
-    main()
+    for item in items:
+        with st.container():
+            st.markdown(f"""
+            <div class="item-card">
+                <b>{item['name']}</b><br>
+                <span class="profit-text">利益目安: 💰 ¥{item['profit']:,}</span><br>
+                ヤフショ価格: ¥{item['price']:,} / 買取目安: ¥{item['buy_price']:,}
+            </div>
+            """, unsafe_allow_html=True)
+            st.link_button("商品ページを開く", item['url'])
+else:
+    st.warning("データファイル(items.json)が見つかりません。Actionsを実行してください。")
