@@ -1,66 +1,74 @@
-import streamlit as st
-import json
 import os
+import requests
+import json
 from datetime import datetime
+import subprocess
 
-# ページ設定
-st.set_page_config(page_title="ヤフートクスコ", page_icon="🛒", layout="wide")
+YAHOO_CLIENT_ID = os.environ.get("YAHOO_CLIENT_ID")
+OUTPUT_FILE = "items.json"
 
-# スタイル設定
-st.markdown("""
-    <style>
-    .item-card {
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 15px;
-        background-color: #f9f9f9;
+JAN_LIST = [
+    {"jan": "4902370550733", "buy_price": 42000},
+    {"jan": "4948872415545", "buy_price": 62000},
+    {"jan": "4549995427845", "buy_price": 125000},
+    {"jan": "4902370542943", "buy_price": 23000},
+    {"jan": "4549292183498", "buy_price": 85000},
+    {"jan": "4547736066175", "buy_price": 35000},
+]
+
+def fetch_yahoo_shopping(jan_code):
+    # 最新のV3 APIエンドポイントを使用
+    url = "https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch"
+    params = {
+        "appid": YAHOO_CLIENT_ID,
+        "jan_code": jan_code,
+        "results": 1,
     }
-    .profit-text {
-        color: #e74c3c;
-        font-weight: bold;
-        font-size: 1.2em;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    try:
+        res = requests.get(url, params=params)
+        data = res.json()
+        if "hits" in data and data["hits"]:
+            item = data["hits"][0]
+            return {
+                "name": item["name"],
+                "price": int(item["price"]),
+                "url": item["url"],
+                "image": item.get("image", {}).get("medium", ""),
+                "shop": item.get("seller", {}).get("name", ""),
+            }
+    except: return None
+    return None
 
-# タイトル
-st.title("🛒 ヤフートクスコ")
-st.caption("ヤフショ価格と相場の差を1秒でチェック")
-
-# サイドバー設定
-with st.sidebar:
-    st.header("⚙️ ポイント設定")
-    paypay_rate = st.number_input("PayPayステップ (%)", value=8.0) / 100
-
-# データ読み込み
-if os.path.exists("items.json"):
-    with open("items.json", "r", encoding="utf-8") as f:
-        items = json.load(f)
-else:
-    items = []
-
-if not items:
-    st.info("現在、データを収集しています。GitHubのActionsから実行するか、1分ほどお待ちください。")
-else:
-    # 利益額順に並び替え
-    sorted_items = sorted(items, key=lambda x: x['profit'], reverse=True)
+def main():
+    results = []
+    for target in JAN_LIST:
+        yahoo_data = fetch_yahoo_shopping(target["jan"])
+        if yahoo_data:
+            points = int(yahoo_data["price"] * 0.08)
+            jisshitsu = yahoo_data["price"] - points
+            profit = target["buy_price"] - jisshitsu
+            yahoo_data.update({
+                "jan": target["jan"],
+                "buy_price": target["buy_price"],
+                "profit": profit,
+                "updated_at": datetime.now().strftime("%m/%d %H:%M")
+            })
+            results.append(yahoo_data)
     
-    for item in sorted_items:
-        with st.container():
-            st.markdown(f"""
-            <div class="item-card">
-                <b>{item['name'][:50]}...</b><br>
-                実質価格: ¥{int(item['price'] * (1 - paypay_rate)):,} <small>(定価: ¥{item['price']:,})</small><br>
-                <span class="profit-text">利益目安: 💰 ¥{item['profit']:,}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            with st.expander("詳細・リンク"):
-                st.write(f"📈 現在の相場目安: ¥{item['buy_price']:,}")
-                st.link_button("ヤフショで商品を見る", item['url'])
+    # データを保存
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=4)
+    
+    # 【ここが重要】GitHubにファイルを保存してアプリに反映させる命令
+    try:
+        subprocess.run(["git", "config", "user.name", "github-actions[bot]"], check=True)
+        subprocess.run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+        subprocess.run(["git", "add", OUTPUT_FILE], check=True)
+        subprocess.run(["git", "commit", "-m", "Update items data"], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print("GitHubへのデータ保存に成功しました！")
+    except Exception as e:
+        print(f"保存エラー（変更がない場合もここを通ります）: {e}")
 
-# 秘書レポート
-st.sidebar.markdown("---")
-st.sidebar.subheader("📋 秘書レポート")
-st.sidebar.write("データが古い場合はGitHubのActionsを手動実行してください。")
+if __name__ == "__main__":
+    main()
