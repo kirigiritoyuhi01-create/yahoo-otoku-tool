@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ヤフースコトク</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e0e0e0;font-family:'Hiragino Sans','Yu Gothic',sans-serif;min-height:100vh}
+#app{max-width:900px;margin:0 auto;padding:12px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px}
+.logo{font-size:20px;font-weight:700;color:#00e5ff;letter-spacing:1px}
+.cats{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.cat{background:#1a1a1a;border:1px solid #333;color:#aaa;padding:5px 12px;border-radius:20px;cursor:pointer;font-size:12px;transition:all .2s}
+.cat.active{background:#00e5ff;color:#000;border-color:#00e5ff;font-weight:700}
+.filter-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px;color:#aaa}
+.filter-row input[type=range]{flex:1;accent-color:#00e5ff}
+.search-btns{display:flex;gap:8px;margin:10px 0}
+.search-btn{background:#1a1a1a;border:1.5px solid #00e5ff;color:#00e5ff;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;flex:1;max-width:220px}
+.search-btn:hover{background:#00e5ff;color:#000}
+.search-btn.active-btn{background:#00e5ff;color:#000}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
+.card{background:#141414;border:1px solid #222;border-radius:10px;padding:12px;position:relative;transition:border-color .2s}
+.card:hover{border-color:#00e5ff}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-name{font-size:13px;font-weight:700;color:#fff;flex:1;margin-right:8px;line-height:1.4}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.badge-hot{background:#00e5ff;color:#000}
+.badge-high{background:#00b8cc;color:#000}
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.price-item{background:#0d0d0d;border-radius:6px;padding:6px 8px}
+.price-label{font-size:10px;color:#777;margin-bottom:2px}
+.price-val{font-size:13px;font-weight:700;color:#fff}
+.profit-box{background:#001a1a;border:1px solid #00e5ff44;border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.profit-label{font-size:10px;color:#00e5ff88}
+.profit-val{font-size:16px;font-weight:700;color:#00e5ff}
+.profit-sub{font-size:12px;color:#00e5ff88}
+.buyback{margin-bottom:8px}
+.buyback-title{font-size:10px;color:#777;margin-bottom:4px}
+.buyback-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.bb-item{background:#0d0d0d;border-radius:4px;padding:3px 4px;text-align:center}
+.bb-name{font-size:9px;color:#666}
+.bb-price{font-size:10px;font-weight:700;color:#aaa}
+.bb-item.best .bb-price{color:#00e5ff}
+.btn-row{display:flex;gap:6px;margin-top:8px}
+.btn{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .2s;flex:1}
+.btn-page{background:#1a1a1a;color:#00e5ff;border:1px solid #00e5ff44}
+.btn-page:hover{background:#00e5ff;color:#000}
+.btn-x{background:#1a1a1a;color:#00e5ff;border:1px solid #00e5ff44}
+.btn-x:hover{background:#00e5ff;color:#000}
+.btn-spread{background:#1a1a1a;color:#00e5ff;border:1px solid #00e5ff44;font-size:11px}
+.btn-spread:hover{background:#00e5ff;color:#000}
+.spread-links{display:none;flex-direction:column;gap:4px;margin-top:6px}
+.spread-links.open{display:flex}
+.spread-link{padding:5px 8px;border-radius:5px;font-size:11px;cursor:pointer;border:1px solid #00e5ff22;color:#00e5ff;background:#0d0d0d;text-align:left;transition:background .2s}
+.spread-link:hover{background:#001a1a;color:#fff}
+.timestamp{font-size:10px;color:#444;margin-top:6px}
+.ai-wrap{position:fixed;bottom:16px;left:16px;z-index:100;width:160px}
+.ai-btn{background:#00e5ff;color:#000;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;width:100%;display:flex;justify-content:space-between;align-items:center}
+.ai-body{background:#141414;border:1px solid #00e5ff44;border-radius:8px;margin-top:4px;padding:8px;display:none}
+.ai-body.open{display:block}
+.ai-msg{font-size:10px;color:#aaa;margin-bottom:6px;line-height:1.5}
+.ai-input{width:100%;background:#0d0d0d;border:1px solid #00e5ff44;color:#fff;padding:4px 6px;border-radius:4px;font-size:10px}
+.footer{text-align:center;font-size:10px;color:#444;margin:20px 0 8px}
+#no-result{display:none;text-align:center;color:#555;padding:30px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">ヤフースコトク</div>
+    <div style="font-size:10px;color:#444">非公式ツール</div>
+  </div>
+  <div class="cats">
+    <div class="cat active" onclick="setCategory('all',this)">オールジャンル</div>
+    <div class="cat" onclick="setCategory('game',this)">ゲーム</div>
+    <div class="cat" onclick="setCategory('earphone',this)">イヤホン</div>
+    <div class="cat" onclick="setCategory('kaden',this)">家電</div>
+    <div class="cat" onclick="setCategory('smartphone',this)">スマホ</div>
+    <div class="cat" onclick="setCategory('camera',this)">カメラ</div>
+  </div>
+  <div class="filter-row">
+    <span>フィルター</span>
+    <input type="range" id="rateSlider" min="0" max="80" value="0" step="1" oninput="updateSlider()">
+    <span id="rateVal">0%</span><span>以上</span>
+  </div>
+  <div class="search-btns">
+    <button class="search-btn" id="btn-profit" onclick="showCards('profit')">ここから検索　お得額順</button>
+    <button class="search-btn" id="btn-rate" onclick="showCards('rate')">ここから検索　お得率順</button>
+  </div>
+  <div class="cards" id="cards"></div>
+  <div id="no-result">条件に合う商品が見つかりませんでした</div>
+  <div class="footer">本サービスは非公式ツールです。価格は参考値です。</div>
+</div>
+
+<div class="ai-wrap">
+  <button class="ai-btn" onclick="toggleAI()"><span>AIアシスタント</span><span id="ai-arrow">▲</span></button>
+  <div class="ai-body" id="ai-body">
+    <div class="ai-msg">ここにないお得な商品探します。アパレル、食品、なんでも聞いてください</div>
+    <input class="ai-input" type="text" placeholder="質問を入力...">
+  </div>
+</div>
+
+<script>
+var currentCategory='all';
+var currentSort=null;
+var currentMinRate=0;
+
+var items=[
+  {id:1,name:'Nintendo Switch 有機ELモデル',category:'game',currentPrice:44000,realPrice:38000,refPrice:49000,points:'PayPayポイント 5%',multiplier:'×5',buyback:{商店:22000,ルデヤ:21500,森森:22500,家電市場:20000,買取wiki:21000},bestBuyback:22500,bestShop:'森森',profit:5500,rate:20,timestamp:'04/18 17:00取得'},
+  {id:2,name:'ポケモンスカーレット Switch',category:'game',currentPrice:6000,realPrice:5200,refPrice:7000,points:'PayPayポイント 3%',multiplier:'×3',buyback:{商店:1500,ルデヤ:1800,森森:1600,家電市場:1400,買取wiki:1700},bestBuyback:1800,bestShop:'ルデヤ',profit:3400,rate:65,timestamp:'04/18 17:00取得'},
+  {id:3,name:'Sony WF-1000XM5',category:'earphone',currentPrice:28000,realPrice:24000,refPrice:35000,points:'PayPayポイント 4%',multiplier:'×4',buyback:{商店:14000,ルデヤ:14500,森森:13800,家電市場:15000,買取wiki:14200},bestBuyback:15000,bestShop:'家電市場',profit:9000,rate:38,timestamp:'04/18 17:00取得'},
+  {id:4,name:'AirPods Pro 第2世代',category:'earphone',currentPrice:32000,realPrice:28000,refPrice:39800,points:'PayPayポイント 3%',multiplier:'×3',buyback:{商店:18000,ルデヤ:19000,森森:17500,家電市場:18500,買取wiki:18000},bestBuyback:19000,bestShop:'ルデヤ',profit:8000,rate:29,timestamp:'04/18 17:00取得'},
+  {id:5,name:'iPad Air 第5世代',category:'smartphone',currentPrice:70000,realPrice:62000,refPrice:84800,points:'PayPayポイント 2%',multiplier:'×2',buyback:{商店:38000,ルデヤ:40000,森森:37000,家電市場:39000,買取wiki:38500},bestBuyback:40000,bestShop:'ルデヤ',profit:15000,rate:24,timestamp:'04/18 17:00取得'}
+];
+
+function setCategory(cat,el){
+  currentCategory=cat;
+  document.querySelectorAll('.cat').forEach(function(e){e.classList.remove('active')});
+  el.classList.add('active');
+  if(currentSort) showCards(currentSort);
+}
+
+function updateSlider(){
+  currentMinRate=parseInt(document.getElementById('rateSlider').value);
+  document.getElementById('rateVal').textContent=currentMinRate+'%';
+  if(currentSort) showCards(currentSort);
+}
+
+function toggleAI(){
+  var body=document.getElementById('ai-body');
+  var arrow=document.getElementById('ai-arrow');
+  if(body.classList.contains('open')){body.classList.remove('open');arrow.textContent='▲';}
+  else{body.classList.add('open');arrow.textContent='▼';}
+}
+
+function showCards(sortType){
+  currentSort=sortType;
+  document.getElementById('btn-profit').classList.remove('active-btn');
+  document.getElementById('btn-rate').classList.remove('active-btn');
+  document.getElementById(sortType==='profit'?'btn-profit':'btn-rate').classList.add('active-btn');
+
+  var filtered=items.filter(function(item){
+    return (currentCategory==='all'||item.category===currentCategory)&&item.rate>=currentMinRate;
+  });
+  filtered.sort(function(a,b){return sortType==='rate'?b.rate-a.rate:b.profit-a.profit;});
+
+  var container=document.getElementById('cards');
+  var noResult=document.getElementById('no-result');
+  if(filtered.length===0){container.innerHTML='';noResult.style.display='block';return;}
+  noResult.style.display='none';
+
+  var mainLabel=sortType==='profit'?'お得額':'お得率';
+  var html='';
+  for(var i=0;i<filtered.length;i++){
+    var item=filtered[i];
+    var mainVal=sortType==='profit'?'+¥'+item.profit.toLocaleString():item.rate+'%';
+    var subVal=sortType==='profit'?'お得率 '+item.rate+'%':'お得額 +¥'+item.profit.toLocaleString();
+
+    var badge='';
+    if(item.rate>=50) badge='<span class="badge badge-hot">HOT</span>';
+    else if(item.rate>=30) badge='<span class="badge badge-high">HIGH</span>';
+
+    var bbHtml='';
+    var shops=['商店','ルデヤ','森森','家電市場','買取wiki'];
+    for(var j=0;j<shops.length;j++){
+      var shop=shops[j];
+      bbHtml+='<div class="bb-item'+(shop===item.bestShop?' best':'')+'"><div class="bb-name">'+shop+'</div><div class="bb-price">'+item.buyback[shop].toLocaleString()+'</div></div>';
+    }
+
+    var xText=encodeURIComponent('【ヤフースコトク】'+item.name+'がお得！実質'+item.realPrice.toLocaleString()+'円→最高買取'+item.bestBuyback.toLocaleString()+'円 差額+'+item.profit.toLocaleString()+'円 #ヤフースコトク #せどり');
+
+    html+='<div class="card">';
+    html+='<div class="card-top"><div class="card-name">'+item.name+'</div>'+badge+'</div>';
+    html+='<div class="prices">';
+    html+='<div class="price-item"><div class="price-label">実質価格</div><div class="price-val">¥'+item.realPrice.toLocaleString()+'</div></div>';
+    html+='<div class="price-item"><div class="price-label">現在価格</div><div class="price-val">¥'+item.currentPrice.toLocaleString()+'</div></div>';
+    html+='<div class="price-item"><div class="price-label">参考価格</div><div class="price-val">¥'+item.refPrice.toLocaleString()+'</div></div>';
+    html+='<div class="price-item"><div class="price-label">'+item.points+'</div><div class="price-val">'+item.multiplier+'</div></div>';
+    html+='</div>';
+    html+='<div class="profit-box"><div><div class="profit-label">差額　'+mainLabel+'</div><div class="profit-val">'+mainVal+'</div></div><div class="profit-sub">'+subVal+'</div></div>';
+    html+='<div class="buyback"><div class="buyback-title">買取価格（円）</div><div class="buyback-grid">'+bbHtml+'</div></div>';
+    html+='<div class="btn-row">';
+    html+='<button class="btn btn-page">商品ページ</button>';
+    html+='<button class="btn btn-x" onclick="window.open(\'https://twitter.com/intent/tweet?text='+xText+'\',\'_blank\')">Xでシェア</button>';
+    html+='<button class="btn btn-spread" onclick="toggleSpread('+item.id+')">相場を見る ▼</button>';
+    html+='</div>';
+    html+='<div class="spread-links" id="spread-'+item.id+'">';
+    html+='<button class="spread-link" onclick="window.open(\'https://www.mercari.com/jp/search/?keyword='+encodeURIComponent(item.name)+'\',\'_blank\')">メルカリで相場を見る</button>';
+    html+='<button class="spread-link" onclick="window.open(\'https://www.amazon.co.jp/s?k='+encodeURIComponent(item.name)+'\',\'_blank\')">Amazonで相場を見る</button>';
+    html+='<button class="spread-link" onclick="window.open(\'https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(item.name)+'\',\'_blank\')">eBayで相場を見る</button>';
+    html+='</div>';
+    html+='<div class="timestamp">商品情報：'+item.timestamp+'</div>';
+    html+='</div>';
+  }
+  container.innerHTML=html;
+}
+
+function toggleSpread(id){
+  document.getElementById('spread-'+id).classList.toggle('open');
+}
+</script>
+</body>
+</html>
