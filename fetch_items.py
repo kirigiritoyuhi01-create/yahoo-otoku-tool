@@ -17,4 +17,4 @@ jan_code = "4580123456789"
 items = fetch_items(jan_code)
 print(items)
 ```
-次のアクション：修正したfetch_items.pyを保存して、Vercelにデプロイできる形で出力します。
+次のアクション：コードをNotionに保存します。
