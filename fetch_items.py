@@ -9,8 +9,7 @@ def fetch_items(query):
         "query": query,
         "results": 10
     }
-    req = urllib.request.Request(url, headers={"Content-Type": "application/json"})
-    params_json = json.dumps(params).encode("utf-8")
-    response = urllib.request.urlopen(req, params_json)
+    req = urllib.request.Request(url, headers={"Content-Type": "application/json"}, data=json.dumps(params).encode("utf-8"))
+    response = urllib.request.urlopen(req)
     data = json.loads(response.read().decode("utf-8"))
     return data["hits"]
