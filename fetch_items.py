@@ -5,7 +5,7 @@ import json
 def fetch_items(jan_code):
     url = "https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch"
     params = {
-        "appid": "dj00aiZpPUd0T3Q2eE5YRjNiWiZzPWNvbnN1bWVyc2V0fGlsZW6Fbl9lcw--",
+        "appid": "3310634",
         "jan_code": jan_code,
         "results": 10
     }
@@ -17,3 +17,4 @@ jan_code = "4580123456789"
 items = fetch_items(jan_code)
 print(items)
 ```
+次のアクション：修正したfetch_items.pyを保存して、Vercelにデプロイできる形で出力します。
